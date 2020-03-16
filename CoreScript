@@ -1,0 +1,43 @@
+% This is matlab script execution and results,
+% Assuming that you alreday have K (camera intrinsic matrix) calculated from 2D images.
+
+
+>> K = [3040, 0, 1874 ; 0, 3055, 1520 ; 0, 0, 1];
+>> [Ebest, loc1,loc2, store] = getBestEssentialMarix("dear_first.jpg","dear_second.jpg", K);
+Finding keypoints...
+342 keypoints found.
+Finding keypoints...
+344 keypoints found.
+Found 31 matches.
+Total matching keypoints are:
+num = 31
+numEs = 150
+threshold = 1.0000e-005
+maxInliers = 20
+>> [U V] = getEssentialUandV(Ebest);
+>> [P1 P2 P3 P4] = fourChoicesOfP(U, V);
+>> [P1points3D P2points3D P3points3D P4points3D] = getAll3DPoints(P1, P2, P3, P4, loc1, loc2, store);
+>> P1points3D(:,1:5)
+ans =
+-130.08408 223.60932 66.59734 -729.02920 86.40338
+-67.68222 286.03320 127.08625 -666.27079 148.51815
+-0.42176 0.70438 0.27529 -2.10114 0.29443
+1.00000 1.00000 1.00000 1.00000 1.00000
+>> P2points3D(:,1:5)
+ans =
+130.08408 -223.60932 -66.59734 729.02920 -86.40338
+67.68222 -286.03320 -127.08625 666.27079 -148.51815
+0.42176 -0.70438 -0.27529 2.10114 -0.29443
+1.00000 1.00000 1.00000 1.00000 1.00000
+>> P3points3D(:,1:5)
+ans =
+0.8317909 0.6098292 0.5006750 0.6994742 0.5285969
+0.4330867 0.7774731 0.9487587 0.6377582 0.9040351
+0.0026973 0.0019167 0.0020576 0.0020135 0.0017941
+1.0000000 1.0000000 1.0000000 1.0000000 1.0000000
+>> P4points3D(:,1:5)
+ans =
+-0.8317909 -0.6098292 -0.5006750 -0.6994742 -0.5285969
+-0.4330867 -0.7774731 -0.9487587 -0.6377582 -0.9040351
+-0.0026973 -0.0019167 -0.0020576 -0.0020135 -0.0017941
+1.0000000 1.0000000 1.0000000 1.0000000 1.0000000
