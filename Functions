@@ -1,0 +1,471 @@
+MATLAB Functions Created for calculating the points:
+
+function [C P points3D] = getCorrect3DPoints(P1points3D, P2points3D, P3points3D, P4points3D, P1, P2, P3, P4);
+#process P1
+t1 = P1(:,4);
+R1 = [P1(:,1) P1(:,2) P1(:,3)];
+C1 = -transpose(R1)*t1 ;
+count1 = 0;
+len1 = length(P1points3D);
+for i=1:1:len1;
+point = P1points3D(1:3,i);
+val = dot((point - C1),transpose(R1(3,:)));
+if(val > 0)
+count1 = count1 +1;
+endif;
+endfor;
+if(count1 == len1)
+C = C1;
+P = P1;
+points3D = P1points3D;
+endif;
+#(X-C).·R(3,:)T > 0?
+#process P2
+t2 = P2(:,4);
+R2 = [P2(:,1) P2(:,2) P2(:,3)];
+C2 = -transpose(R2)*t2 ;
+count2 = 0;
+len2 = length(P2points3D);
+for i=1:1:len2;
+point = P2points3D(1:3,i);
+val = dot((point - C2),transpose(R1(3,:)));
+if(val > 0)
+count2 = count2 +1;
+endif;
+endfor;
+if(count2 == len2)
+C = C2;
+P = P2;
+points3D = P2points3D;
+endif;
+#process P3
+t3 = P3(:,4);
+R3 = [P3(:,1) P3(:,2) P3(:,3)];
+C3 = -transpose(R3)*t3 ;
+count3 = 0;
+len3 = length(P3points3D);
+for i=1:1:len3;
+point = P3points3D(1:3,i);
+val = dot((point - C3),transpose(R1(3,:)));
+if(val > 0)
+count3 = count3 +1;
+endif;
+endfor;
+if(count3 == len3)
+C = C3;
+P = P3;
+points3D = P3points3D;
+endif;
+#process P4
+t4 = P4(:,4);
+R4 = [P4(:,1) P4(:,2) P4(:,3)];
+C4 = -transpose(R4)*t4 ;
+count4 = 0;
+len4 = length(P4points3D);
+for i=1:1:len4;
+point = P4points3D(1:3,i);
+val = dot((point - C4),transpose(R1(3,:)));
+if(val > 0)
+count4 = count4 +1;
+endif;
+endfor;
+if(count4 == len4)
+C = C4;
+P = P4;
+points3D = P4points3D;
+endif;
+endfunction;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+## -*- texinfo -*-
+## This method returns Ebest, loc's from 2 images, store.
+## Input : image1,image2
+## Output : Ebest, loc1, loc2, store
+##
+## Author: Ashish Pandey
+## Keywords: best Essential matrix
+function [Ebest, loc1, loc2, store] = getBestEssentialMarix(image1,image2, K);
+[num loc1 loc2 match] = match(image1, image2);
+display("Total matching keypoints are: ");
+display(num);
+invK = inv(K);
+store = [];
+#lets calculate homography 100 times
+countEssentials = 150;
+for i = 1:1:countEssentials;
+indexes = giveDistinctIndexes(8, num);
+store = giveMatchKeyPoints(match);
+A = getEssential(loc1,loc2,indexes,store, invK);
+E = getEssentialMatrixHomogeneous(A);
+allEs(:,:,i) = E;
+endfor;
+Ebest = applyRansac(allEs, store, loc1, loc2,invK);
+endfunction;
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -*- texinfo -*-
+## This method returns give distinct number of indexes in a range of number
+## Input : no. of indexes, range
+## Output : distinct indexes array
+##
+## Author: Ashish Pandey
+## Keywords: Unique indexes, Distinct
+function indexes = giveDistinctIndexes(num, length);
+if(length<num);
+display("range given is smaller than the number count");
+else
+randomNums = floor( 1 + (length-1)*rand(1,num) );
+indexes = unique(randomNums);
+while (size(indexes,2) < num);
+randomNums = floor( 1 + (length-1)*rand(1,num) );
+indexes = unique(randomNums);
+endwhile;
+endif;
+endfunction;
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -*- texinfo -*-
+## This method returns mapping of matching from loc1 to loc2
+## Input : match matrix from sift match
+## Output : store matrix
+##
+## Author: Ashish Pandey
+## Keywords: Store
+function store = giveMatchKeyPoints(match);
+len = size(match,2);
+j = 1;
+for i=1:1:len;
+if(match(i) != 0)
+store(j,:)=[i,match(i)];
+j = j+1;
+endif;
+end;
+endfunction;
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -*- texinfo -*-
+## This method returns A from 8 pair of corresspondng matches.
+## Input : loc1, loc2, distinct 8 indexes, store
+## Output : A
+##
+## Author: Ashish Pandey
+## Keywords: base matrix for essential matrix
+## we assume here that length of idexes will be 4
+function A = getEssential(loc1,loc2,indexes,store, invK);
+#p1P1 is two length array, first index is the key in first image,
+#second index is matching key in second image.
+p1P1 = store(indexes(1),:);
+p2P2 = store(indexes(2),:);
+p3P3 = store(indexes(3),:);
+p4P4 = store(indexes(4),:);
+p5P5 = store(indexes(5),:);
+p6P6 = store(indexes(6),:);
+p7P7 = store(indexes(7),:);
+p8P8 = store(indexes(8),:);
+p1 = loc1(p1P1(1),:);
+P1 = loc2(p1P1(2),:);
+p2 = loc1(p2P2(1),:);
+P2 = loc2(p2P2(2),:);
+p3 = loc1(p3P3(1),:);
+P3 = loc2(p3P3(2),:);
+p4 = loc1(p4P4(1),:);
+P4 = loc2(p4P4(2),:);
+p5 = loc1(p5P5(1),:);
+P5 = loc2(p5P5(2),:);
+p6 = loc1(p6P6(1),:);
+P6 = loc2(p6P6(2),:);
+p7 = loc1(p7P7(1),:);
+P7 = loc2(p7P7(2),:);
+p8 = loc1(p8P8(1),:);
+P8 = loc2(p8P8(2),:);
+# NORMALIZE the points while retrieving the points from loc's
+# the z coordinate of all the points wll be 1, as we are going to normalize with
+# K which is intrinsic parameter of camera.
+# assuming same camera is being used for both the images.
+#first matching points
+x1 = p1(1);
+y1 = p1(2);
+X1 = P1(1);
+Y1 = P1(2);
+Img1Point1 = [x1; y1; 1];
+Img2Point1 = [X1; Y1; 1];
+normImg1Point1 = invK*Img1Point1;
+normImg2Point1 = invK*Img2Point1;
+x1 = normImg1Point1(1);
+y1 = normImg1Point1(2);
+X1 = normImg2Point1(1);
+Y1 = normImg2Point1(2);
+#second matching points
+x2 = p2(1);
+y2 = p2(2);
+X2 = P2(1);
+Y2 = P2(2);
+Img1Point2 = [x2; y2; 1];
+Img2Point2 = [X2; Y2; 1];
+normImg1Point2 = invK*Img1Point2;
+normImg2Point2 = invK*Img2Point2;
+x2 = normImg1Point2(1);
+y2 = normImg1Point2(2);
+X2 = normImg2Point2(1);
+Y2 = normImg2Point2(2);
+#third matching points
+x3 = p3(1);
+y3 = p3(2);
+X3 = P3(1);
+Y3 = P3(2);
+Img1Point3 = [x3; y3; 1];
+Img2Point3 = [X3; Y3; 1];
+normImg1Point3 = invK*Img1Point3;
+normImg2Point3 = invK*Img2Point3;
+x3 = normImg1Point3(1);
+y3 = normImg1Point3(2);
+X3 = normImg2Point3(1);
+Y3 = normImg2Point3(2);
+#fourth matching points
+x4 = p4(1);
+y4 = p4(2);
+X4 = P4(1);
+Y4 = P4(2);
+Img1Point4 = [x4; y4; 1];
+Img2Point4 = [X4; Y4; 1];
+normImg1Point4 = invK*Img1Point4;
+normImg2Point4 = invK*Img2Point4;
+x4 = normImg1Point4(1);
+y4 = normImg1Point4(2);
+X4 = normImg2Point4(1);
+Y4 = normImg2Point4(2);
+#fifth matching points
+x5 = p5(1);
+y5 = p5(2);
+X5 = P5(1);
+Y5 = P5(2);
+Img1Point5 = [x5; y5; 1];
+Img2Point5 = [X5; Y5; 1];
+normImg1Point5 = invK*Img1Point5;
+normImg2Point5 = invK*Img2Point5;
+x5 = normImg1Point5(1);
+y5 = normImg1Point5(2);
+X5 = normImg2Point5(1);
+Y5 = normImg2Point5(2);
+#sixth matching points
+x6 = p6(1);
+y6 = p6(2);
+X6 = P6(1);
+Y6 = P6(2);
+Img1Point6 = [x6; y6; 1];
+Img2Point6 = [X6; Y6; 1];
+normImg1Point6 = invK*Img1Point6;
+normImg2Point6 = invK*Img2Point6;
+x6 = normImg1Point6(1);
+y6 = normImg1Point6(2);
+X6 = normImg2Point6(1);
+Y6 = normImg2Point6(2);
+#seventh matching points
+x7 = p7(1);
+y7 = p7(2);
+X7 = P7(1);
+Y7 = P7(2);
+Img1Point7 = [x7; y7; 1];
+Img2Point7 = [X7; Y7; 1];
+normImg1Point7 = invK*Img1Point7;
+normImg2Point7 = invK*Img2Point7;
+x7 = normImg1Point7(1);
+y7 = normImg1Point7(2);
+X7 = normImg2Point7(1);
+Y7 = normImg2Point7(2);
+#eighth matching points
+x8 = p8(1);
+y8 = p8(2);
+X8 = P8(1);
+Y8 = P8(2);
+Img1Point8 = [x8; y8; 1];
+Img2Point8 = [X8; Y8; 1];
+normImg1Point8 = invK*Img1Point8;
+normImg2Point8 = invK*Img2Point8;
+x8 = normImg1Point8(1);
+y8 = normImg1Point8(2);
+X8 = normImg2Point8(1);
+Y8 = normImg2Point8(2);
+# bluePrint
+# firstRow = [x1x2, x1y2, x1, y1x2, y1y2, y1, x2, y2,1]
+firstRow = [x1*X1, x1*Y1, x1, y1*X1, y1*Y1, y1, X1, Y1,1];
+secondRow = [x2*X2, x2*Y2, x2, y2*X2, y2*Y2, y2, X2, Y2,1];
+thirdRow = [x3*X3, x3*Y3, x3, y3*X3, y3*Y3, y3, X3, Y3,1];
+fourthRow = [x4*X4, x4*Y4, x4, y4*X4, y4*Y4, y4, X4, Y4,1];
+fifthRow = [x5*X5, x5*Y5, x5, y5*X5, y5*Y5, y5, X5, Y5,1];
+sixthRow = [x6*X6, x6*Y6, x6, y6*X6, y6*Y6, y6, X6, Y6,1];
+seventhRow = [x7*X7, x7*Y7, x7, y7*X7, y7*Y7, y7, X7, Y7,1];
+eighthRow = [x8*X8, x8*Y8, x8, y8*X8, y8*Y8, y8, X8, Y8,1];
+A = [firstRow; secondRow; thirdRow; fourthRow; fifthRow; sixthRow; seventhRow; eighthRow];
+endfunction;
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+function E = getEssentialMatrixHomogeneous(A);
+[U D V] = svd(A);
+Etemp = V(:,9);
+E = reshape(Etemp,3,3);
+endfunction;
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+function Ebest = applyRansac(allEs, store, loc1, loc2, invK);
+numMatches = length(store);
+dimensions = size(allEs);
+if(length(dimensions) == 3)
+numEs = dimensions(3);
+else
+numEs = 1;
+endif;
+display(numEs);
+maxInliers = 0;
+threshold = 0.00001;
+display(threshold);
+for i =1:1:numEs;
+E = allEs(:,:,i);
+inliersE = getEinliers(E,store,loc1,loc2,threshold, invK);
+if(inliersE >= maxInliers)
+maxInliers = inliersE;
+Ebest = E;
+endif;
+endfor;
+display(maxInliers);
+endfunction;
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -*- texinfo -*-
+## This method returns number of inliers for a H after checking for all keypoints.
+## Input : E,store,loc1,loc2, threshold, invK
+## Output : number of inliers
+##
+## Author: Ashish Pandey
+## Keywords: Essnetial matrices, inliers
+function inliersE = getEinliers(E,store,loc1,loc2, threshold, invK)
+inliersE = 0;
+totalKeys = length(store);
+totalValue = 0;
+for i =1:1:totalKeys
+p = store(i,1);
+P = store(i,2);
+#first matching points
+x1 = loc1(p,1);
+y1 = loc1(p,2);
+X1 = loc2(P,1);
+Y1 = loc2(P,2);
+Img1Point1 = [x1; y1; 1];
+Img2Point1 = [X1; Y1; 1];
+normImg1Point1 = invK*Img1Point1;
+normImg2Point1 = invK*Img2Point1;
+x1 = normImg1Point1(1);
+y1 = normImg1Point1(2);
+X1 = normImg2Point1(1);
+Y1 = normImg2Point1(2);
+firstRow = [x1*X1, x1*Y1, x1, y1*X1, y1*Y1, y1, X1, Y1,1];
+columnE = reshape(E,9,1);
+totalValue = abs(firstRow*columnE);
+#display(totalValue);
+if(totalValue < threshold);
+inliersE = inliersE + 1;
+endif;
+endfor;
+endfunction;
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+function [P1points3D P2points3D P3points3D P4points3D] = getAll3DPoints(P1, P2, P3, P4, loc1, loc2, store);
+P1points3D = [];
+P2points3D = [];
+P3points3D = [];
+P4points3D = [];
+# P for first camera, [I|0]
+P = [1 0 0 0;0 1 0 0;0 0 1 0];
+totalKeys = length(store);
+#processing FIRST option for camera matrix P1
+Ps = P1;
+for i =1:1:totalKeys
+img1Key = store(i,1);
+img2Key = store(i,2);
+#matching points
+x1 = loc1(img1Key,1);
+y1 = loc1(img1Key,2);
+X1 = loc2(img2Key,1);
+Y1 = loc2(img2Key,2);
+A = [x1*P(3)-P(1), x1*P(6)-P(4),x1*P(9)-P(7),x1*P(12)-P(10) ; y1*P(3)-P(2), y1*P(6)-P(5),y1*P(9)-P(8),y1*P(12)-P(11) ; X1*Ps(3)-Ps(1), X1*Ps(6)-Ps(4),X1*Ps(9)-Ps(7),X1*Ps(12)-Ps(10) ; Y1*Ps(3)-Ps(2), Y1*Ps(6)-Ps(5),Y1*Ps(9)-Ps(8),Y1*Ps(12)-Ps(11)];
+[U D V] = svd(A);
+point = V(:,4);
+point = point./point(4);
+P1points3D = [P1points3D, point];
+endfor;
+#processing SECOND option for camera matrix P2
+Ps = P2;
+for i =1:1:totalKeys
+img1Key = store(i,1);
+img2Key = store(i,2);
+#matching points
+x1 = loc1(img1Key,1);
+y1 = loc1(img1Key,2);
+X1 = loc2(img2Key,1);
+Y1 = loc2(img2Key,2);
+A = [x1*P(3)-P(1), x1*P(6)-P(4),x1*P(9)-P(7),x1*P(12)-P(10) ; y1*P(3)-P(2), y1*P(6)-P(5),y1*P(9)-P(8),y1*P(12)-P(11) ; X1*Ps(3)-Ps(1), X1*Ps(6)-Ps(4),X1*Ps(9)-Ps(7),X1*Ps(12)-Ps(10) ; Y1*Ps(3)-Ps(2), Y1*Ps(6)-Ps(5),Y1*Ps(9)-Ps(8),Y1*Ps(12)-Ps(11)];
+[U D V] = svd(A);
+point = V(:,4);
+point = point./point(4);
+P2points3D = [P2points3D, point];
+endfor;
+#processing THIRD option for camera matrix P3
+Ps = P3;
+for i =1:1:totalKeys
+img1Key = store(i,1);
+img2Key = store(i,2);
+#matching points
+x1 = loc1(img1Key,1);
+y1 = loc1(img1Key,2);
+X1 = loc2(img2Key,1);
+Y1 = loc2(img2Key,2);
+A = [x1*P(3)-P(1), x1*P(6)-P(4),x1*P(9)-P(7),x1*P(12)-P(10) ; y1*P(3)-P(2), y1*P(6)-P(5),y1*P(9)-P(8),y1*P(12)-P(11) ; X1*Ps(3)-Ps(1), X1*Ps(6)-Ps(4),X1*Ps(9)-Ps(7),X1*Ps(12)-Ps(10) ; Y1*Ps(3)-Ps(2), Y1*Ps(6)-Ps(5),Y1*Ps(9)-Ps(8),Y1*Ps(12)-Ps(11)];
+[U D V] = svd(A);
+point = V(:,4);
+point = point./point(4);
+P3points3D = [P3points3D, point];
+endfor;
+#processing FOURTH option for camera matrix P4
+Ps = P4;
+for i =1:1:totalKeys
+img1Key = store(i,1);
+img2Key = store(i,2);
+#matching points
+x1 = loc1(img1Key,1);
+y1 = loc1(img1Key,2);
+X1 = loc2(img2Key,1);
+Y1 = loc2(img2Key,2);
+A = [x1*P(3)-P(1), x1*P(6)-P(4),x1*P(9)-P(7),x1*P(12)-P(10) ; y1*P(3)-P(2), y1*P(6)-P(5),y1*P(9)-P(8),y1*P(12)-P(11) ; X1*Ps(3)-Ps(1), X1*Ps(6)-Ps(4),X1*Ps(9)-Ps(7),X1*Ps(12)-Ps(10) ; Y1*Ps(3)-Ps(2), Y1*Ps(6)-Ps(5),Y1*Ps(9)-Ps(8),Y1*Ps(12)-Ps(11)];
+[U D V] = svd(A);
+point = V(:,4);
+point = point./point(4);
+P4points3D = [P4points3D, point];
+endfor;
+endfunction;
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+function [P1 P2 P3 P4] = fourChoicesOfP(U, V);
+W = [0 -1 0;1 0 0;0 0 1];
+# P = [UWVT | +u3] or [UWVT | −u3] or [UWTVT | +u3] or [UWTVT | −u3].
+P1 = [U*W*transpose(V) , U(:,3)];
+P2 = [U*W*transpose(V) , -U(:,3)];
+P3 = [U*transpose(W)*transpose(V) , U(:,3)];
+P4 = [U*transpose(W)*transpose(V) , -U(:,3)];
+endfunction;
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+function [U V] = getEssentialUandV(Ebest);
+[U0 D0 V0] = svd(Ebest);
+d = [1 0 0; 0 1 0; 0 0 0];
+newE = U0*d*transpose(V0);
+[U D V] = svd(newE);
+endfunction;
+
